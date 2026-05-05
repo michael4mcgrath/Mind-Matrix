@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mind Matrix — Weekly Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f0f0;
+    --text2: #999;
+    --text3: #555;
+    --purple: #7f77dd;
+    --purple-bg: rgba(127,119,221,0.12);
+    --purple-text: #afa9ec;
+    --teal: #1d9e75;
+    --teal-bg: rgba(29,158,117,0.12);
+    --teal-text: #5dcaa5;
+    --coral: #d85a30;
+    --coral-bg: rgba(216,90,48,0.12);
+    --coral-text: #f0997b;
+    --blue: #378add;
+    --blue-bg: rgba(55,138,221,0.12);
+    --blue-text: #85b7eb;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  html { background: var(--bg); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .app { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* HEADER */
+  .hdr { margin-bottom: 20px; }
+  .hdr-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .title-block h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+  .title-block p { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .level-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; background: var(--purple-bg); color: var(--purple-text); border: 1px solid rgba(127,119,221,0.25); white-space: nowrap; }
+  .week-pill { font-size: 12px; color: var(--text2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; white-space: nowrap; }
+
+  /* XP BAR */
+  .xp-wrap { margin-bottom: 20px; }
+  .xp-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .xp-row span:last-child { color: var(--text); font-weight: 600; }
+  .xp-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .xp-fill { height: 100%; background: var(--purple); border-radius: 3px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+
+  /* STAT CARDS */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+  .stat-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-val { font-size: 22px; font-weight: 700; color: var(--text); }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  /* WEEK GRID */
+  .week-section { margin-bottom: 20px; }
+  .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 8px; }
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .wday { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 4px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .wday:hover { border-color: var(--border2); }
+  .wday.active-day { border-color: var(--purple) !important; background: var(--purple-bg); }
+  .wday.done-day { border-color: var(--teal) !important; background: var(--teal-bg); }
+  .wday .dn { font-size: 10px; color: var(--text3); margin-bottom: 4px; font-weight: 500; }
+  .wday.active-day .dn { color: var(--purple-text); }
+  .wday.done-day .dn { color: var(--teal-text); }
+  .wday .dp { font-size: 14px; font-weight: 700; }
+  .wday.done-day .dp { color: var(--teal-text); }
+
+  /* DAY NAV */
+  .day-nav { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .day-btn { padding: 7px 14px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; border: 1px solid var(--border); color: var(--text2); background: transparent; cursor: pointer; transition: all 0.15s; }
+  .day-btn:hover { border-color: var(--border2); color: var(--text); }
+  .day-btn.cur { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+  /* PILLAR CARDS */
+  .pillar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+  .pillar-hdr { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; transition: background 0.1s; }
+  .pillar-hdr:hover { background: var(--surface2); }
+  .p-icon { width: 36px; height: 36px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; font-weight: 700; }
+  .p-meta { flex: 1; min-width: 0; }
+  .p-meta h3 { font-size: 14px; font-weight: 600; }
+  .p-meta p { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .p-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .p-xp-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+  .p-prog { font-size: 12px; color: var(--text3); }
+  .chev { font-size: 11px; color: var(--text3); transition: transform 0.2s; display: inline-block; }
+  .chev.open { transform: rotate(180deg); }
+
+  .pillar-body { border-top: 1px solid var(--border); }
+  .freq-head { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); padding: 8px 16px 4px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .habit { display: flex; align-items: flex-start; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .habit:last-child { border-bottom: none; }
+  .habit:hover { background: var(--surface2); }
+  .cb { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid var(--border2); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .cb svg { display: none; }
+  .cb.on svg { display: block; }
+  .habit-txt { flex: 1; min-width: 0; }
+  .habit-title { font-size: 13px; color: var(--text); line-height: 1.4; transition: color 0.15s; }
+  .habit-title.done { text-decoration: line-through; color: var(--text3); }
+  .habit-sub { font-size: 11px; color: var(--text3); margin-top: 3px; line-height: 1.5; }
+  .xp-chip { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: var(--surface2); color: var(--text3); border: 1px solid var(--border); flex-shrink: 0; margin-top: 2px; }
+
+  /* TOAST */
+  .toast-wrap { position: relative; height: 0; }
+  .toast { position: absolute; left: 50%; transform: translateX(-50%) translateY(-50px); background: var(--text); color: var(--bg); font-size: 13px; font-weight: 500; padding: 9px 18px; border-radius: 20px; pointer-events: none; white-space: nowrap; z-index: 100; transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s; opacity: 0; }
+  .toast.show { transform: translateX(-50%) translateY(12px); opacity: 1; }
+
+  /* FOOTER */
+  .footer-btns { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .footer-btn { font-size: 12px; color: var(--text2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 14px; cursor: pointer; background: transparent; transition: all 0.15s; }
+  .footer-btn:hover { border-color: var(--border2); color: var(--text); }
+
+  @media (max-width: 500px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat-val { font-size: 18px; }
+    .hdr-top { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="toast-wrap"><div class="toast" id="toast"></div></div>
+
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="title-block">
+        <div class="level-pill" id="level-pill">&#9670; Novice</div>
+        <h1>Mind Matrix</h1>
+        <p>4-pillar weekly operating system</p>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <div class="week-pill" id="week-pill">Week of —</div>
+      </div>
+    </div>
+    <div class="xp-wrap">
+      <div class="xp-row"><span>Weekly XP</span><span><span id="xp-cur">0</span> / <span id="xp-max">0</span></span></div>
+      <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Done today</div><div class="stat-val" id="s-today">0</div><div class="stat-sub">habits</div></div>
+    <div class="stat"><div class="stat-label">Week total</div><div class="stat-val" id="s-week">0</div><div class="stat-sub">completed</div></div>
+    <div class="stat"><div class="stat-label">Top pillar</div><div class="stat-val" id="s-best" style="font-size:15px;padding-top:4px;">—</div><div class="stat-sub">this week</div></div>
+    <div class="stat"><div class="stat-label">Perfect days</div><div class="stat-val" id="s-streak">0</div><div class="stat-sub">this week</div></div>
+  </div>
+
+  <div class="week-section">
+    <div class="section-title">Weekly overview — click a day to jump</div>
+    <div class="week-grid" id="week-grid"></div>
+  </div>
+
+  <div class="section-title" style="margin-bottom:8px;">Day selector</div>
+  <div class="day-nav" id="day-nav"></div>
+
+  <div id="pillars"></div>
+
+  <div class="footer-btns">
+    <button class="footer-btn" onclick="resetDay()">&#8635; Reset today</button>
+    <button class="footer-btn" onclick="resetAll()">&#8635; Reset full week</button>
+  </div>
+</div>
+
+<script>
+var DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var todayRaw = new Date().getDay();
+var todayIdx = todayRaw === 0 ? 6 : todayRaw - 1;
+var currentDay = todayIdx;
+
+var PILLARS = [
+  {
+    id:'copy', label:'&#9998;', name:'Copywriting & Business',
+    goal:'Writing offers that consistently generate revenue',
+    col:'--purple', bg:'--purple-bg', txt:'--purple-text',
+    accent:'#7f77dd', accentBg:'rgba(127,119,221,0.12)', accentTxt:'#afa9ec',
+    habits:[
+      {t:'Write 1 piece of copy',s:'Ad, email, bullet dump or hook — reps beat perfection.',xp:20,f:'daily'},
+      {t:'Add 3 bullets to swipe file',s:'From ads or content you scroll past. Label each type.',xp:10,f:'daily'},
+      {t:'Study 1 winning ad or email',s:'Break down hook, body, CTA. Ask: why did this work?',xp:15,f:'daily'},
+      {t:'Read 10 pages (copy or business)',s:'Hormozi, Ogilvy, Kennedy, Halbert — rotate.',xp:10,f:'daily'},
+      {t:'Do 1 income-generating action',s:'Send a pitch, post content, or follow up a lead.',xp:20,f:'daily'},
+      {t:'Write & send 1 full email or ad',s:'Hook, body, bullets, CTA — start to finish. Publish it.',xp:40,f:'weekly'},
+      {t:'Test 2 hooks on same offer',s:'Story-led vs problem-led. Note which gets more response.',xp:30,f:'weekly'},
+      {t:'Review your NRO',s:'Is your niche tight? Result compelling? Vehicle credible?',xp:20,f:'weekly'},
+      {t:'Record 60-sec offer explanation',s:"Can't explain it clearly in 60s = offer isn't clear enough.",xp:20,f:'weekly'},
+    ]
+  },
+  {
+    id:'bjj', label:'&#9651;', name:'BJJ & Strength',
+    goal:'Physically dominant and competition-ready',
+    accent:'#1d9e75', accentBg:'rgba(29,158,117,0.12)', accentTxt:'#5dcaa5',
+    habits:[
+      {t:'Drill 1 technique x10 each side',s:'Solo or with partner. Repetition builds reflex — not just rolling.',xp:20,f:'daily'},
+      {t:'Visualise 1 position for 5 mins',s:'Before bed. See yourself flowing through it perfectly.',xp:10,f:'daily'},
+      {t:'Hit protein target + 7–8hrs sleep',s:'Recovery is the adaptation. This one is non-negotiable.',xp:15,f:'daily'},
+      {t:'Note 1 thing that got you tapped',s:'What position, what mistake, what to fix next session.',xp:10,f:'daily'},
+      {t:'Strength session (lift)',s:'Deadlift, row, press, carry. Grip + posterior chain = mat strength.',xp:35,f:'weekly'},
+      {t:'Second strength session',s:'Two lifts minimum per week. Progressive overload each time.',xp:35,f:'weekly'},
+      {t:'Roll with someone better than you',s:'Intentionally seek discomfort. Not just whoever is there.',xp:30,f:'weekly'},
+      {t:'Watch 1 match film — study entries',s:'Gordon Ryan, Mikey Musumeci, Lachlan Giles — pick one.',xp:20,f:'weekly'},
+      {t:'Set 1 positional goal for the week',s:'"This week I only play half guard." Constraint = mastery.',xp:15,f:'weekly'},
+    ]
+  },
+  {
+    id:'charm', label:'&#9825;', name:'Charisma & Dateability',
+    goal:'The man she chooses — and stays with',
+    accent:'#d85a30', accentBg:'rgba(216,90,48,0.12)', accentTxt:'#f0997b',
+    habits:[
+      {t:'Talk to 1 stranger with no agenda',s:'Cashier, gym, queue. Practice presence — not pickup.',xp:15,f:'daily'},
+      {t:'Practice 1 charisma micro-skill',s:'Rotate: eye contact → name use → silence → callbacks → banter.',xp:15,f:'daily'},
+      {t:'Do something interesting today',s:'Train, create, explore, compete. A full life is the foundation.',xp:10,f:'daily'},
+      {t:'Review 1 conversation — what landed',s:'30 seconds of reflection after any real interaction.',xp:10,f:'daily'},
+      {t:'Go somewhere social (new venue/event)',s:"Volume of reps. Can't improve conversation from your bedroom.",xp:30,f:'weekly'},
+      {t:'Go on or plan 1 date — lead it fully',s:'Pick the venue, set the time, drive the vibe. No questions.',xp:40,f:'weekly'},
+      {t:'Study 1 charismatic communicator',s:'Podcast, interview, stand-up. Watch pacing, pauses, frame.',xp:20,f:'weekly'},
+      {t:'Invest in your appearance intentionally',s:'Haircut, fit, grooming. Self-respect, not vanity.',xp:15,f:'weekly'},
+    ]
+  },
+  {
+    id:'ai', label:'&#9670;', name:'AI & Mindset',
+    goal:'Force-multiplied output + unshakeable clarity',
+    accent:'#378add', accentBg:'rgba(55,138,221,0.12)', accentTxt:'#85b7eb',
+    habits:[
+      {t:'Use AI to accelerate 1 task',s:'Bullet brainstorm, hook gen, draft — then edit into your voice.',xp:15,f:'daily'},
+      {t:'5-min mindset journal',s:"What's working / bottleneck / next move. No fluff.",xp:10,f:'daily'},
+      {t:'Protect your deep work block',s:'2–4 hrs. No phone, no tabs. Real output happens here.',xp:20,f:'daily'},
+      {t:"Shutdown ritual — log tomorrow's top 3",s:'List tasks, close laptop. Rest is part of output.',xp:10,f:'daily'},
+      {t:'Learn 1 new AI workflow or prompt',s:'Custom GPT, automation, new tool. Stay ahead of the curve.',xp:25,f:'weekly'},
+      {t:'Weekly review across all 4 pillars',s:'Score each 1–10. Where did you slip? What moves needle most?',xp:30,f:'weekly'},
+      {t:'Audit your inputs',s:'Podcasts, people, content, socials. Garbage in, garbage out.',xp:20,f:'weekly'},
+      {t:'Revisit your end goals',s:'Goals drift. 10 mins weekly keeps you pointed right.',xp:20,f:'weekly'},
+    ]
+  }
+];
+
+var LEVELS = [
+  {name:'Novice',min:0,icon:'&#9670;'},
+  {name:'Apprentice',min:150,icon:'&#9670;&#9670;'},
+  {name:'Operator',min:350,icon:'&#9733;'},
+  {name:'Specialist',min:600,icon:'&#9733;&#9733;'},
+  {name:'Elite',min:900,icon:'&#9733;&#9733;&#9733;'},
+  {name:'Master',min:1200,icon:'&#10022; Master'}
+];
+
+var state = {};
+DAYS.forEach(function(_,di){
+  state[di]={};
+  PILLARS.forEach(function(p){
+    state[di][p.id]={};
+    p.habits.forEach(function(_,hi){ state[di][p.id][hi]=false; });
+  });
+});
+
+function totalHabits(){ var t=0; PILLARS.forEach(function(p){ t+=p.habits.length; }); return t; }
+function dayDone(di){ var d=0; PILLARS.forEach(function(p){ p.habits.forEach(function(_,hi){ if(state[di][p.id][hi]) d++; }); }); return d; }
+function dayXP(di){ var x=0; PILLARS.forEach(function(p){ p.habits.forEach(function(h,hi){ if(state[di][p.id][hi]) x+=h.xp; }); }); return x; }
+function pillarDayXP(p,di){ var x=0; p.habits.forEach(function(h,hi){ if(state[di][p.id][hi]) x+=h.xp; }); return x; }
+function pillarDayDone(p,di){ var d=0; p.habits.forEach(function(_,hi){ if(state[di][p.id][hi]) d++; }); return d; }
+function weekXP(){ var x=0; DAYS.forEach(function(_,di){ x+=dayXP(di); }); return x; }
+function maxWeekXP(){ var x=0; PILLARS.forEach(function(p){ p.habits.forEach(function(h){ x+=h.xp; }); }); return x*7; }
+function weekDoneTotal(){ var d=0; DAYS.forEach(function(_,di){ d+=dayDone(di); }); return d; }
+function perfectDays(){ var c=0,t=totalHabits(); DAYS.forEach(function(_,di){ if(dayDone(di)===t) c++; }); return c; }
+function bestPillar(){
+  var best=null,bx=-1;
+  PILLARS.forEach(function(p){
+    var x=0; DAYS.forEach(function(_,di){ x+=pillarDayXP(p,di); });
+    if(x>bx){ bx=x; best=p; }
+  });
+  return best&&bx>0 ? best.label+' '+best.name.split(' ')[0] : '—';
+}
+function getLevel(xp){ var l=LEVELS[0]; LEVELS.forEach(function(lv){ if(xp>=lv.min) l=lv; }); return l; }
+
+var toastTimer;
+function toast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){ el.classList.remove('show'); },2200);
+}
+
+function getWeekLabel(){
+  var d=new Date(), day=d.getDay();
+  var diff=d.getDate()-day+(day===0?-6:1);
+  var m=new Date(d); m.setDate(diff);
+  var s=new Date(m); s.setDate(m.getDate()+6);
+  var o={month:'short',day:'numeric'};
+  return m.toLocaleDateString('en-AU',o)+' – '+s.toLocaleDateString('en-AU',o);
+}
+
+function renderAll(){
+  var wxp=weekXP(), mxp=maxWeekXP();
+  var pct=mxp>0?Math.round(wxp/mxp*100):0;
+  document.getElementById('xp-cur').textContent=wxp;
+  document.getElementById('xp-max').textContent=mxp;
+  document.getElementById('xp-fill').style.width=pct+'%';
+  var lv=getLevel(wxp);
+  document.getElementById('level-pill').innerHTML=lv.icon+' '+lv.name;
+  document.getElementById('s-today').textContent=dayDone(currentDay);
+  document.getElementById('s-week').textContent=weekDoneTotal();
+  document.getElementById('s-best').innerHTML=bestPillar();
+  document.getElementById('s-streak').textContent=perfectDays();
+  renderWeekGrid(); renderDayNav(); renderPillars();
+}
+
+function renderWeekGrid(){
+  var g=document.getElementById('week-grid'), t=totalHabits(); g.innerHTML='';
+  DAYS.forEach(function(d,di){
+    var done=dayDone(di), pct=t>0?Math.round(done/t*100):0;
+    var cls='wday';
+    if(pct===100&&done>0) cls+=' done-day';
+    if(di===currentDay) cls+=' active-day';
+    g.innerHTML+='<div class="'+cls+'" onclick="switchDay('+di+')" title="'+d+'"><div class="dn">'+d+'</div><div class="dp">'+pct+'%</div></div>';
+  });
+}
+
+function renderDayNav(){
+  var n=document.getElementById('day-nav'); n.innerHTML='';
+  DAYS.forEach(function(d,di){
+    var cls='day-btn'+(di===currentDay?' cur':'');
+    var lbl=d+(di===todayIdx?' ·':'');
+    n.innerHTML+='<button class="'+cls+'" onclick="switchDay('+di+')">'+lbl+'</button>';
+  });
+}
+
+function switchDay(di){ currentDay=di; renderAll(); }
+
+function renderPillars(){
+  var container=document.getElementById('pillars'); container.innerHTML='';
+  PILLARS.forEach(function(p){
+    var done=pillarDayDone(p,currentDay), total=p.habits.length;
+    var pxp=pillarDayXP(p,currentDay);
+    var daily=p.habits.filter(function(h){ return h.f==='daily'; });
+    var weekly=p.habits.filter(function(h){ return h.f==='weekly'; });
+
+    var html='<div class="pillar" id="pillar-'+p.id+'">';
+    html+='<div class="pillar-hdr" onclick="togglePillar(\''+p.id+'\')">';
+    html+='<div class="p-icon" style="background:'+p.accentBg+';color:'+p.accentTxt+'">'+p.label+'</div>';
+    html+='<div class="p-meta"><h3>'+p.name+'</h3><p>'+p.goal+'</p></div>';
+    html+='<div class="p-right">';
+    html+='<span class="p-xp-badge" style="background:'+p.accentBg+';color:'+p.accentTxt+'">'+pxp+' XP</span>';
+    html+='<span class="p-prog">'+done+'/'+total+'</span>';
+    html+='<span class="chev open" id="chev-'+p.id+'">&#9660;</span>';
+    html+='</div></div>';
+
+    html+='<div class="pillar-body" id="pb-'+p.id+'">';
+
+    if(daily.length){
+      html+='<div class="freq-head">Daily habits</div>';
+      p.habits.forEach(function(h,hi){
+        if(h.f!=='daily') return;
+        var chk=state[currentDay][p.id][hi];
+        html+='<div class="habit" onclick="toggleHabit(\''+p.id+'\','+hi+')">';
+        html+='<div class="cb'+(chk?' on':'')+'" style="'+(chk?'background:'+p.accent+';border-color:'+p.accent+';':'')+'">';
+        html+='<svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1.5 4.5L4 7L9.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        html+='</div>';
+        html+='<div class="habit-txt"><div class="habit-title'+(chk?' done':'')+'">'+h.t+'</div><div class="habit-sub">'+h.s+'</div></div>';
+        html+='<span class="xp-chip">+'+h.xp+'XP</span>';
+        html+='</div>';
+      });
+    }
+
+    if(weekly.length){
+      html+='<div class="freq-head">Weekly habits</div>';
+      p.habits.forEach(function(h,hi){
+        if(h.f!=='weekly') return;
+        var chk=state[currentDay][p.id][hi];
+        html+='<div class="habit" onclick="toggleHabit(\''+p.id+'\','+hi+')">';
+        html+='<div class="cb'+(chk?' on':'')+'" style="'+(chk?'background:'+p.accent+';border-color:'+p.accent+';':'')+'">';
+        html+='<svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1.5 4.5L4 7L9.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        html+='</div>';
+        html+='<div class="habit-txt"><div class="habit-title'+(chk?' done':'')+'">'+h.t+'</div><div class="habit-sub">'+h.s+'</div></div>';
+        html+='<span class="xp-chip">+'+h.xp+'XP</span>';
+        html+='</div>';
+      });
+    }
+
+    html+='</div></div>';
+    container.innerHTML+=html;
+  });
+}
+
+function togglePillar(id){
+  var b=document.getElementById('pb-'+id), c=document.getElementById('chev-'+id);
+  var hidden=b.style.display==='none';
+  b.style.display=hidden?'':'none';
+  if(hidden) c.classList.add('open'); else c.classList.remove('open');
+}
+
+function toggleHabit(pid,hi){
+  var was=state[currentDay][pid][hi];
+  state[currentDay][pid][hi]=!was;
+  var p=PILLARS.find(function(x){ return x.id===pid; });
+  var h=p.habits[hi];
+  if(!was){
+    var msgs=['Rep counted. +'+h.xp+' XP','Locked in. +'+h.xp+' XP','Stack the reps. +'+h.xp+' XP','Done. +'+h.xp+' XP'];
+    toast(msgs[Math.floor(Math.random()*msgs.length)]);
+    if(dayDone(currentDay)===totalHabits()) setTimeout(function(){ toast('Perfect day. Locked in.'); },2500);
+  }
+  renderAll();
+}
+
+function resetDay(){
+  PILLARS.forEach(function(p){ p.habits.forEach(function(_,hi){ state[currentDay][p.id][hi]=false; }); });
+  renderAll(); toast('Today reset.');
+}
+
+function resetAll(){
+  if(!confirm('Reset the full week? This cannot be undone.')) return;
+  DAYS.forEach(function(_,di){ PILLARS.forEach(function(p){ p.habits.forEach(function(_,hi){ state[di][p.id][hi]=false; }); }); });
+  renderAll(); toast('Full week reset.');
+}
+
+document.getElementById('week-pill').textContent='Week of '+getWeekLabel();
+renderAll();
+</script>
+</body>
+</html>
